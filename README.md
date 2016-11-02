@@ -6,7 +6,7 @@ Deploying new wordpress project with docker.
 ##How to use:
 * Edit workpath in run.sh
 * Run ./run.sh [arg] [projectname]
-args:
+#### args:
 - 'new' - create new project
 - 'start' - runing docker
 - 'stop' - stoping docker
