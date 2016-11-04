@@ -5,8 +5,7 @@ services:
   wordpress:
     image: wordpress
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
     environment:
       WORDPRESS_DB_PASSWORD: docker
     volumes:

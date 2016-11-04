@@ -1,10 +1,14 @@
 #!/bin/bash
 
-#####################
-workpath=/home/yorsh/work/ # <- edit this
+#######CONFIG#######
+workpath=/home/yorsh/work
+devserver=95.213.237.199
+devport=1759
+devuser=root
+testdomain=test.mryorsh.org
 #####################
 
-fullpath=$workpath$2
+fullpath=$workpath/$2
 
 docker &> /dev/null
 
@@ -51,13 +55,17 @@ if [[ $? -eq 127 ]]; then
     sudo apt-get update
     sudo apt-get install git-core -yq
 fi
+
 function checkProjectName(){
+
     if ! [[ $1 ]]; then
         echo "Format: [action] [project name] [type]"
         echo "Use --help to get help"
         exit 1
     fi
+
 }
+
 function newProject(){
 
     checkProjectName "$1"
@@ -69,13 +77,14 @@ function newProject(){
     mkdir -p $fullpath/src/wp-content
     mkdir -p $fullpath/src/db
     mkdir -p $fullpath/src/logs
-    mkdir -p $fullpath/files
+    mkdir -p $fullpath/__files
 
     cp -r ./example-project/* $fullpath/
     cp -r ./docker/* $fullpath/src/
 
     cd $fullpath/src
     git init
+
 }
 
 function runDocker(){
@@ -89,6 +98,7 @@ function runDocker(){
     sleep 15
     echo "Project is available at http://localhost"
     dbImport "$1"
+
 }
 
 function stopDocker(){
@@ -96,6 +106,7 @@ function stopDocker(){
     dbDump "$1"
     docker-compose stop
     docker-compose rm -v --force
+
 }
 
 function dbImport(){
@@ -104,6 +115,7 @@ function dbImport(){
     echo "Import Mysql dump file"
     cd $fullpath/src
     docker exec -i src_mysql_1 mysql -u root -pdocker wordpress < ./db/dump.sql
+
 }
 
 function dbDump(){
@@ -112,6 +124,7 @@ function dbDump(){
     echo "Creating Mysql dump file"
     cd $fullpath/src
     docker exec src_mysql_1 mysqldump -u root -pdocker wordpress > ./db/dump.sql
+
 }
 
 function backup(){
@@ -119,9 +132,16 @@ function backup(){
     dbDump "$3"
     cd $fullpath
     tar -cvzf  $2-$3-backup-`date +%d-%m-%Y-%H-%M-%S`.tar.gz .$1 --exclude='*.tar.gz' --exclude='*.log'
+
 }
 
-# function getyii(){}
+function deploy(){
+
+    dbDump "$1"
+    rsync -e="ssh -p $devport" -avz --exclude '__*' --exclude '*.log' --exclude '.git' $fullpath $devuser@$devserver:$workpath
+    ssh $devuser@$devserver -p $devport 'cd '$fullpath'/src/db;find -name dump.sql -print0 | xargs -0 sed -i "s|localhost|'$testdomain'|g";cd /home/wp-docker;./run.sh start '$1';'
+
+}
 
 function printHelp(){
 
@@ -133,7 +153,9 @@ function printHelp(){
     \t\taction 'bf' - creating full project backup\b
     \t\taction 'd' - creating db dump\b
     \t\taction 'i' - import db dump\b
+    \t\taction 'deploy' - deploy project for test server\b
     "
+
 }
 
 case $1 in
@@ -160,6 +182,9 @@ case $1 in
         ;;
     'i') #import db dump 
         dbImport "$2"
+        ;;
+    'deploy') #deploy for test server
+        deploy "$2"
         ;;
     *)
         printHelp
