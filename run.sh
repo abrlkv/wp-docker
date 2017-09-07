@@ -2,10 +2,10 @@
 
 #######CONFIG#######
 workpath=/home/yorsh/work
-devserver=95.213.237.199
-devport=1759
+devserver=82.202.236.3
+devport=22
 devuser=root
-testdomain=test.mryorsh.org
+testdomain=javan.mryorsh.org
 #####################
 
 fullpath=$workpath/$2
@@ -36,7 +36,7 @@ docker-compose &> /dev/null
 
 if [[ $? -eq 127 ]]; then
     echo "Get and install docker-compose"
-    sudo curl -L "https://github.com/docker/compose/releases/download/1.8.1/docker-compose-$(uname -s)-$(uname -m)" > /usr/local/bin/docker-compose
+    sudo curl -L "https://github.com/docker/compose/releases/download/1.9.0/docker-compose-$(uname -s)-$(uname -m)" > /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
 fi
 
@@ -138,8 +138,8 @@ function backup(){
 function deploy(){
 
     dbDump "$1"
-    rsync -e="ssh -p $devport" -avz --exclude '__*' --exclude '*.log' --exclude '.git' $fullpath $devuser@$devserver:$workpath
-    ssh $devuser@$devserver -p $devport 'cd '$fullpath'/src/db;find -name dump.sql -print0 | xargs -0 sed -i "s|localhost|'$testdomain'|g";cd /home/wp-docker;./run.sh start '$1';'
+    rsync -e="ssh -p $devport" -avz --exclude '__*' --exclude '*.log' --exclude '.git' --exclude '*.gz' $fullpath $devuser@$devserver:$workpath
+    ssh $devuser@$devserver -p $devport 'cd '$fullpath'/src/db;find -name dump.sql -print0 | xargs -0 sed -i "s|localhost|'$testdomain'|g";cd '$fullpath'/src;find -name docker-compose.yml -print0 | xargs -0 sed -i "s|80:80|80:80|g";docker-compose build;docker-compose up -d;sleep 15;docker exec -i src_mysql_1 mysql -u root -pdocker wordpress < ./db/dump.sql;chown -R www-data:www-data *;'
 
 }
 

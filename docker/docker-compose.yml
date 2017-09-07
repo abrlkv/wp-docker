@@ -3,9 +3,9 @@ version: '2'
 services:
 
   wordpress:
-    image: wordpress
+    image: wordpress:php7.0
     ports:
-      - "8080:80"
+      - "80:80"
     environment:
       WORDPRESS_DB_PASSWORD: docker
     volumes:

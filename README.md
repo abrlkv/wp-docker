@@ -1,8 +1,8 @@
-##About wp-docker:
+## About wp-docker:
 
 Deploying new wordpress project with docker.
 
-##How to use:
+## How to use:
 1. Edit config in run.sh
 2. Run `./run.sh [arg] [projectname]`
 
